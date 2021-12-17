@@ -1,3 +1,6 @@
+# USA! - Universal store API
+[![Go](https://github.com/kozaktomas/universal-store-api/actions/workflows/go.yml/badge.svg)](https://github.com/kozaktomas/universal-store-api/actions/workflows/go.yml)
+
 ## Supported field types
 
 Required options for data types are **bold** and you have to specify them in configuration file.
