@@ -1,0 +1,43 @@
+### Creates a new entity person
+PUT http://localhost:8080/people
+Authorization: Bearer xyz
+Content-Type: application/json
+
+{
+  "firstname": "tomas",
+  "lastname": "kozak",
+  "email": "email@talko.cz",
+  "born": "1991/04/21",
+  "height": 187
+}
+
+### Get list of all people
+GET http://localhost:8080/people
+Authorization: Bearer xyz
+
+### Get payload data of entity by ID
+GET http://localhost:8080/people/63c85fae-251f-45ab-7ac6-e9a6ab26ecd0
+
+### Delete person from the list
+DELETE http://localhost:8080/people/37e5604a-b38d-45cf-5692-fe0c54253e63
+
+### Creates a new entity dog
+PUT http://localhost:8080/dogs
+Content-Type: application/json
+
+{
+  "name": "cumacek",
+  "cuteness": 7
+}
+
+### Get list of all dogs
+GET http://localhost:8080/dogs
+
+### Get payload data of entity by ID
+GET http://localhost:8080/dogs/63c85fae-251f-45ab-7ac6-e9a6ab26ecd0
+
+### Delete person from the list
+DELETE http://localhost:8080/dogs/37e5604a-b38d-45cf-5692-fe0c54253e63
+
+### Get Prometheus metrics
+GET http://localhost:8080/metrics

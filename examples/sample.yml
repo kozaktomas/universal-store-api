@@ -1,0 +1,48 @@
+- name: people
+  api:
+    bearer: "xyz"         # no password when empty or missing
+    limits:
+      list: "0"             # unlimited
+      get: "0"              # unlimited
+      put: "5m"             # 5 requests / minute [s,m,h,d - available]
+      delete: "-1"          # delete endpoint disabled
+  fields:
+    firstname:
+      type: "string"
+      min: 2
+      required: true
+    lastname:
+      type: "string"
+      required: true
+    email:
+      type: "string"
+      required: true
+      rule: "email"
+    born:
+      type: "date"
+      format: "2006/01/02"
+    height:
+      type: int
+      required: true
+      min: 10
+      max: 250
+
+- name: dogs
+  api:
+    bearer: ""
+    limits:
+      list: "0"
+      get: "0"
+      put: "5m"
+      delete: "-1"
+  fields:
+    name:
+      type: "string"
+      min: 2
+      required: true
+    cuteness:
+      type: "int"
+      min: 1
+      max: 10
+      required: true
+
