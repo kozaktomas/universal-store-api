@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"fmt"
@@ -8,6 +8,10 @@ import (
 	"strconv"
 	"time"
 )
+
+type Config struct {
+	ServiceConfigs []ServiceConfig
+}
 
 type ServiceConfig struct {
 	Name      string                 `yaml:"name"`
@@ -60,57 +64,28 @@ type Limit struct {
 	Unlimited bool
 }
 
-func parseConfig(filename string) ([]ServiceConfig, error) {
+func (c Config) GetServiceNames() []string {
+	var services []string
+
+	for _, service := range c.ServiceConfigs {
+		services = append(services, service.Name)
+	}
+
+	return services
+}
+
+func ParseConfig(filename string) (*Config, error) {
 	var apiConfigs []ServiceConfig
 	content, err := os.ReadFile(filename)
 	if err != nil {
-		return apiConfigs, fmt.Errorf("could not read data from file %q", filename)
+		return nil, fmt.Errorf("could not read data from file %q", filename)
 	}
 
 	if err = yaml.Unmarshal(content, &apiConfigs); err != nil {
-		return apiConfigs, fmt.Errorf("could not unmarshal yaml data from file %q", filename)
+		return nil, fmt.Errorf("could not unmarshal yaml data from file %q", filename)
 	}
 
-	return apiConfigs, nil
-}
-
-var limitRegExp = regexp.MustCompile(`^(\d{1,3})([smhd])$`)
-
-func parseLimit(limit string) (Limit, error) {
-	// it could be -1 for disabled endpoint or 0 for unlimited endpoint
-	if limit == "0" {
-		return Limit{
-			Count:     0,
-			Interval:  time.Second,
-			Disabled:  false,
-			Unlimited: true,
-		}, nil
-	}
-
-	if limit == "-1" {
-		return Limit{
-			Count:     0,
-			Interval:  time.Second,
-			Disabled:  true,
-			Unlimited: false,
-		}, nil
-	}
-
-	match := limitRegExp.Match([]byte(limit))
-	if !match {
-		return Limit{}, fmt.Errorf("could not parse API limit %q", limit)
-	}
-
-	matches := limitRegExp.FindStringSubmatch(limit)
-	count, _ := strconv.Atoi(matches[1])                // ignore error -> checked by regexp
-	interval, _ := time.ParseDuration("1" + matches[2]) // ignore error -> checked by regexp
-
-	return Limit{
-		Count:     count,
-		Interval:  interval,
-		Disabled:  false,
-		Unlimited: false,
-	}, nil
+	return &Config{ServiceConfigs: apiConfigs}, nil
 }
 
 func (l LimitsConfig) ParseGet() (Limit, error) {
@@ -180,4 +155,43 @@ func (f FieldConfig) GetRule() FieldRule {
 	}
 
 	return fieldFormat
+}
+
+var limitRegExp = regexp.MustCompile(`^(\d{1,3})([smhd])$`)
+
+func parseLimit(limit string) (Limit, error) {
+	// it could be -1 for disabled endpoint or 0 for unlimited endpoint
+	if limit == "0" {
+		return Limit{
+			Count:     0,
+			Interval:  time.Second,
+			Disabled:  false,
+			Unlimited: true,
+		}, nil
+	}
+
+	if limit == "-1" {
+		return Limit{
+			Count:     0,
+			Interval:  time.Second,
+			Disabled:  true,
+			Unlimited: false,
+		}, nil
+	}
+
+	match := limitRegExp.Match([]byte(limit))
+	if !match {
+		return Limit{}, fmt.Errorf("could not parse API limit %q", limit)
+	}
+
+	matches := limitRegExp.FindStringSubmatch(limit)
+	count, _ := strconv.Atoi(matches[1])                // ignore error -> checked by regexp
+	interval, _ := time.ParseDuration("1" + matches[2]) // ignore error -> checked by regexp
+
+	return Limit{
+		Count:     count,
+		Interval:  interval,
+		Disabled:  false,
+		Unlimited: false,
+	}, nil
 }

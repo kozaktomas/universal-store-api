@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/kozaktomas/universal-store-api/config"
 	"testing"
 )
 
@@ -191,7 +192,7 @@ func TestValidateInt(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		field := FieldConfig{
+		field := config.FieldConfig{
 			Type:     testCase.dataType,
 			Required: &testCase.required,
 			Min:      &testCase.min,

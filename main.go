@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kozaktomas/universal-store-api/config"
 	"github.com/kozaktomas/universal-store-api/storage"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
@@ -23,23 +24,20 @@ func main() {
 }
 
 func run() {
-	servicesConfig, err := parseConfig(*runCommandConfig)
+	cfg, err := config.ParseConfig(*runCommandConfig)
 	if err != nil {
 		abort(err)
 	}
 
-	var serviceNames []string
-	for _, serviceConfig := range servicesConfig {
-		serviceNames = append(serviceNames, serviceConfig.Name)
-	}
+	serviceNames := cfg.GetServiceNames()
 
 	stg, err := storage.CreateStorageByType(*runCommandStorageType, serviceNames)
 	if err != nil {
 		abort(err)
 	}
 
-	endpoints := make(map[string]Service, len(servicesConfig))
-	for _, serviceConfig := range servicesConfig {
+	endpoints := make(map[string]Service, len(serviceNames))
+	for _, serviceConfig := range cfg.ServiceConfigs {
 		endpoints[serviceConfig.Name] = Service{
 			Cfg:     serviceConfig,
 			Storage: stg,

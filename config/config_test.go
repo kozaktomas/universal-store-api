@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -61,4 +61,22 @@ func TestParseLimit(t *testing.T) {
 			assert.Equal(t, testcase.interval, res.Interval, testcase.title)
 		}
 	}
+}
+
+func TestSampleConfig(t *testing.T) {
+	cfg, err := ParseConfig("./../examples/sample.yml")
+	assert.Nil(t, err)
+
+	assert.Len(t, cfg.GetServiceNames(), 2)
+
+	people := cfg.ServiceConfigs[0]
+	assert.Equal(t, "people", people.Name)
+	assert.Equal(t, "xyz", *people.ApiConfig.Bearer)
+	putLimit, err := people.ApiConfig.Limits.ParsePut()
+	assert.Nil(t, err)
+	assert.Equal(t, 5, putLimit.Count)
+	assert.Equal(t, time.Minute, putLimit.Interval)
+	assert.Equal(t, false, putLimit.Disabled)
+	assert.Equal(t, false, putLimit.Unlimited)
+	assert.Len(t, people.Fields, 5)
 }

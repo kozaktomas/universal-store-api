@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/kozaktomas/universal-store-api/config"
 	"github.com/kozaktomas/universal-store-api/storage"
 )
 
 type Service struct {
-	Cfg     ServiceConfig
+	Cfg     config.ServiceConfig
 	Storage storage.Storage
 }
 
