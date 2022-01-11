@@ -3,6 +3,7 @@ module github.com/kozaktomas/universal-store-api
 go 1.17
 
 require (
+	github.com/aws/aws-sdk-go v1.42.31
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/julianshen/gin-limiter v0.0.0-20161123033831-fc39b5e90fe7
@@ -15,7 +16,6 @@ require (
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
-	github.com/aws/aws-sdk-go v1.42.31 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
