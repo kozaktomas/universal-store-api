@@ -23,7 +23,8 @@ func (e *Service) Validate(payload map[string]interface{}) error {
 }
 
 func (e *Service) Put(payload map[string]interface{}) error {
-	if err := e.Storage.Add(e.Cfg.Name, payload); err != nil {
+	_, err := e.Storage.Add(e.Cfg.Name, payload)
+	if err != nil {
 		return fmt.Errorf("could not put new entity into storage: %w", err)
 	}
 

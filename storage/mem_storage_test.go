@@ -11,13 +11,19 @@ func TestMemStorage(t *testing.T) {
 	s := CreateMemStorage([]string{firstServiceName, secondServiceName})
 
 	// add 3 items first service
-	assert.Nil(t, s.Add(firstServiceName, 1))
-	assert.Nil(t, s.Add(firstServiceName, 2))
-	assert.Nil(t, s.Add(firstServiceName, 3))
+	var err error
+	_, err = s.Add(firstServiceName, 1)
+	assert.Nil(t, err)
+	_, err = s.Add(firstServiceName, 2)
+	assert.Nil(t, err)
+	_, err = s.Add(firstServiceName, 3)
+	assert.Nil(t, err)
 
 	// add 2 items second service
-	assert.Nil(t, s.Add(secondServiceName, 1))
-	assert.Nil(t, s.Add(secondServiceName, 2))
+	_, err = s.Add(secondServiceName, 1)
+	assert.Nil(t, err)
+	_, err = s.Add(secondServiceName, 2)
+	assert.Nil(t, err)
 
 	// get list and check length
 	list, err := s.List(firstServiceName)

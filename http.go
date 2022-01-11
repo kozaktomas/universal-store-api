@@ -172,6 +172,7 @@ func (server *httpServer) createDeleteEndpoint(endpoint Service) gin.HandlerFunc
 		id := c.Param("id")
 
 		if err := endpoint.Delete(id); err != nil {
+			fmt.Println(err)
 			c.String(http.StatusNotFound, "could not find an entity with id %q", id)
 			return
 		}

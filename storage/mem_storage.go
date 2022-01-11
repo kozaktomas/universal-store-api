@@ -2,8 +2,6 @@ package storage
 
 import (
 	"fmt"
-	uuid "github.com/nu7hatch/gouuid"
-	"time"
 )
 
 type memStorage struct {
@@ -21,21 +19,19 @@ func CreateMemStorage(serviceNames []string) *memStorage {
 	return &memStorage{services: serviceMap}
 }
 
-func (storage *memStorage) Add(serviceName string, payload interface{}) error {
-	uuidV4, err := uuid.NewV4()
+func (storage *memStorage) Add(serviceName string, payload interface{}) (Entity, error) {
+	e, err := createEntity(payload)
 	if err != nil {
-		return fmt.Errorf("could not create new ID for entity: %w", err)
+		return e, err
 	}
 
-	e := Entity{
-		Id:      uuidV4.String(),
-		Created: time.Now(),
-		Payload: payload,
-	}
+	storage.AddEntity(serviceName, e)
 
+	return e, nil
+}
+
+func (storage *memStorage) AddEntity(serviceName string, e Entity) {
 	storage.services[serviceName] = append(storage.services[serviceName], e)
-
-	return nil
 }
 
 func (storage *memStorage) List(serviceName string) ([]Entity, error) {

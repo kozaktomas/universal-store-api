@@ -16,10 +16,12 @@ GET http://localhost:8080/people
 Authorization: Bearer xyz
 
 ### Get payload data of entity by ID
-GET http://localhost:8080/people/63c85fae-251f-45ab-7ac6-e9a6ab26ecd0
+GET http://localhost:8080/people/6a10dd3f-b291-4c03-7a05-7195b7a26ffe
+Authorization: Bearer xyz
 
 ### Delete person from the list
-DELETE http://localhost:8080/people/37e5604a-b38d-45cf-5692-fe0c54253e63
+DELETE http://localhost:8080/people/f1bc757c-8e3a-436d-6b50-c37ee8d0d65f
+Authorization: Bearer xyz
 
 ### Creates a new entity dog
 PUT http://localhost:8080/dogs
