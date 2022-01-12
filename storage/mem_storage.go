@@ -12,7 +12,6 @@ func CreateMemStorage(serviceNames []string) *memStorage {
 	serviceMap := make(map[string][]Entity)
 
 	for _, serviceName := range serviceNames {
-		fmt.Println(serviceName)
 		serviceMap[serviceName] = []Entity{}
 	}
 

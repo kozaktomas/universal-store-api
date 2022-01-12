@@ -43,3 +43,15 @@ DELETE http://localhost:8080/dogs/37e5604a-b38d-45cf-5692-fe0c54253e63
 
 ### Get Prometheus metrics
 GET http://localhost:8080/metrics
+
+### Get Homepage data
+GET http://localhost:8080
+
+### Set logging level Homepage data
+POST http://localhost:8080/log_level
+Authorization: Bearer llkey
+Content-Type: application/json
+
+{
+  "level": "fatal"
+}

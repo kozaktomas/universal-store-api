@@ -8,8 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 	ginlimiter "github.com/julianshen/gin-limiter"
 	"github.com/kozaktomas/universal-store-api/config"
+	"github.com/sirupsen/logrus"
+	ginlogrus "github.com/toorop/gin-logrus"
 	ginprometheus "github.com/zsais/go-gin-prometheus"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,15 +22,21 @@ import (
 type httpServer struct {
 	endpoints map[string]Service
 	engine    *gin.Engine
+	logger    *logrus.Logger
 }
 
-func createHttpServer(endpoints map[string]Service) (*httpServer, error) {
+func createHttpServer(endpoints map[string]Service, logger *logrus.Logger) (*httpServer, error) {
+	gin.SetMode(gin.ReleaseMode)
+
 	server := &httpServer{
 		endpoints: endpoints,
-		engine:    gin.Default(),
+		engine:    gin.New(),
+		logger:    logger,
 	}
 
-	server.installPrometheus()
+	server.engine.Use(ginlogrus.Logger(logger))
+	server.engine.Use(gin.Recovery())
+	server.registerPrometheus()
 
 	for _, endpoint := range endpoints {
 		err := server.registerHandlers(endpoint)
@@ -38,6 +45,7 @@ func createHttpServer(endpoints map[string]Service) (*httpServer, error) {
 		}
 	}
 
+	server.registerLogLevelHandler()
 	server.registerIndexHandler()
 	server.engine.NoRoute(notFound)
 	server.engine.NoMethod(notFound)
@@ -108,11 +116,13 @@ func (server *httpServer) createAuthMiddleware(endpoint Service) gin.HandlerFunc
 			bearerTokenHeader := c.GetHeader("Authorization")
 			parts := strings.Split(bearerTokenHeader, " ")
 			if len(parts) != 2 {
+				server.logger.Tracef("invalid auth input: %q", bearerTokenHeader)
 				_ = c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("invalid Authorization header input"))
 				return
 			}
 
 			if *endpoint.Cfg.ApiConfig.Bearer != parts[1] {
+				server.logger.Tracef("Wrong bearer token: %q", parts[1])
 				_ = c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("invalid Authorization bearer token"))
 				return
 			}
@@ -151,16 +161,19 @@ func (server *httpServer) createPutEndpoint(endpoint Service) gin.HandlerFunc {
 		rawData, _ := c.GetRawData()
 		if err := json.Unmarshal(rawData, &rawJson); err != nil {
 			c.String(http.StatusBadRequest, "could not parse json data: %w", err)
+			server.logger.WithError(err).Debugf("could not parse input data: %q", rawData)
 			return
 		}
 
 		if err := endpoint.Validate(rawJson); err != nil {
 			c.String(http.StatusBadRequest, "invalid input: %s", err.Error())
+			server.logger.WithError(err).Debugf("invalid input data: %q", rawData)
 			return
 		}
 
 		if err := endpoint.Put(rawJson); err != nil {
 			c.String(http.StatusInternalServerError, "could not store requested data")
+			server.logger.WithError(err).Errorf("could not store data")
 			return
 		}
 
@@ -172,58 +185,86 @@ func (server *httpServer) createDeleteEndpoint(endpoint Service) gin.HandlerFunc
 		id := c.Param("id")
 
 		if err := endpoint.Delete(id); err != nil {
-			fmt.Println(err)
+			server.logger.WithError(err).Info("could not delete entity")
 			c.String(http.StatusNotFound, "could not find an entity with id %q", id)
 			return
 		}
 
-		c.String(204, "")
+		c.String(http.StatusNoContent, "")
 	}
 }
 
-func (server *httpServer) installPrometheus() {
+func (server *httpServer) registerPrometheus() {
 	p := ginprometheus.NewPrometheus("gin")
 	p.ReqCntURLLabelMappingFn = func(c *gin.Context) string {
 		url := c.FullPath()
 		return url
 	}
 	p.Use(server.engine)
+	server.logger.Trace("Prometheus handler registered")
+}
+
+func (server *httpServer) registerLogLevelHandler() {
+	apiToken := os.Getenv("LOG_LEVEL_API_KEY")
+
+	if apiToken != "" {
+		server.engine.POST("/log_level", func(c *gin.Context) {
+			bearerTokenHeader := c.GetHeader("Authorization")
+			parts := strings.Split(bearerTokenHeader, " ")
+			if len(parts) != 2 {
+				_ = c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("invalid Authorization header input"))
+				c.Abort()
+				return
+			}
+
+			if apiToken != parts[1] {
+				_ = c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("invalid Authorization bearer token"))
+				c.Abort()
+				return
+			}
+
+			var data struct {
+				Level string `json:"level"`
+			}
+
+			if err := c.BindJSON(&data); err != nil {
+				c.String(http.StatusBadRequest, "could not decode input json (level field is required)")
+				c.Abort()
+				return
+			}
+
+			level, err := logrus.ParseLevel(data.Level)
+			if err != nil {
+				c.String(http.StatusBadRequest, "%q is not supported log level", data.Level)
+				c.Abort()
+				return
+			}
+
+			server.logger.SetLevel(level)
+			c.String(http.StatusNoContent, "")
+			c.Abort()
+			server.logger.Infof("Log level changed to %q", level.String())
+		})
+
+		server.logger.Trace("Log level change endpoint created")
+	} else {
+		server.logger.Trace("Log level change endpoint not going to work because there is no LOG_LEVEL_API_KEY environment variable")
+	}
 }
 
 func (server *httpServer) registerIndexHandler() {
 	server.engine.GET("/", func(c *gin.Context) {
-		type responseItem struct {
-			Method      string `json:"method"`
-			Endpoint    string `json:"endpoint"`
-			Description string `json:"description"`
+		var services []string
+		for _, endpoint := range server.endpoints {
+			services = append(services, endpoint.Cfg.Name)
 		}
 
-		var response []responseItem
-
-		for _, endpoint := range server.endpoints {
-			response = append(response, responseItem{
-				Method:      "GET",
-				Endpoint:    fmt.Sprintf("/%s", endpoint.Cfg.Name),
-				Description: fmt.Sprintf("Get list of %s", endpoint.Cfg.Name),
-			})
-
-			response = append(response, responseItem{
-				Method:      "GET",
-				Endpoint:    fmt.Sprintf("/%s/:id", endpoint.Cfg.Name),
-				Description: fmt.Sprintf("Get detail information about %s", endpoint.Cfg.Name),
-			})
-
-			response = append(response, responseItem{
-				Method:      "PUT",
-				Endpoint:    fmt.Sprintf("/%s", endpoint.Cfg.Name),
-				Description: fmt.Sprintf("Creates a new entity of %s list", endpoint.Cfg.Name),
-			})
-
-			response = append(response, responseItem{
-				Method:      "DELETE",
-				Endpoint:    fmt.Sprintf("/%s/:id", endpoint.Cfg.Name),
-				Description: fmt.Sprintf("Deletes entity of %s list", endpoint.Cfg.Name),
-			})
+		response := struct {
+			Services []string `json:"services"`
+			LogLevel string   `json:"log_level"`
+		}{
+			Services: services,
+			LogLevel: server.logger.Level.String(),
 		}
 
 		c.JSON(http.StatusOK, response)
@@ -238,22 +279,22 @@ func (server *httpServer) Run(port int) {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
-			log.Printf("listen: %s\n", err)
+			server.logger.Infof("listen: %s\n", err)
 		}
 	}()
 
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("Shutting down server...")
+	server.logger.Info("Shutting down server...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown:", err)
+		server.logger.Fatal("Server forced to shutdown:", err)
 	}
 
-	log.Println("Server exiting")
+	server.logger.Info("Server exiting...")
 }
 
 func createRateLimiterMiddleware(limit config.Limit) gin.HandlerFunc {
