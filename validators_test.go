@@ -2,8 +2,23 @@ package main
 
 import (
 	"github.com/kozaktomas/universal-store-api/config"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
+
+func TestValidateServiceNames(t *testing.T) {
+	cases := map[string]bool{
+		"dogs":                   true,
+		"very_long_service_name": true,
+		"metrics":                false, // reserved
+		"log_level":              false, // reserved
+	}
+
+	for serviceName, expectation := range cases {
+		err := ValidateServiceNames([]string{serviceName})
+		assert.Equal(t, expectation, err == nil)
+	}
+}
 
 func TestValidateInt(t *testing.T) {
 	type testCase struct {

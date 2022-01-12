@@ -51,13 +51,6 @@ Required options for data types are **bold** and you have to specify them in con
 
 - not implemented
 
-## Reserved service names (not implemented)
-
-Some names are reserved and cannot be used as a service name.
-
-* `metrics`
-* `log_level`
-
 ## Advanced configuration
 
 ### Logging level
@@ -84,3 +77,10 @@ Content-Type: application/json
   "level": "trace"
 }
 ```
+
+## Reserved service names
+
+Some names are reserved and cannot be used as a service name.
+
+* `metrics`
+* `log_level`

@@ -34,6 +34,10 @@ func run() {
 	}
 
 	serviceNames := cfg.GetServiceNames()
+	if err = ValidateServiceNames(serviceNames); err != nil {
+		logger.WithError(err).Fatalf("service name validation falied")
+	}
+
 	stg, err := storage.CreateStorageByType(*runCommandStorageType, serviceNames)
 	if err != nil {
 		logger.WithError(err).Fatalf("could not create storage")

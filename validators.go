@@ -7,6 +7,23 @@ import (
 	"time"
 )
 
+// ValidateServiceNames checks for reserved service names
+func ValidateServiceNames(names []string) error {
+	reservedNames := map[string]bool{
+		"metrics":   true,
+		"log_level": true,
+	}
+
+	for _, name := range names {
+		_, found := reservedNames[name]
+		if found {
+			return fmt.Errorf("could not use reserved serice name: %q", name)
+		}
+	}
+
+	return nil
+}
+
 func Validate(field config.FieldConfig, value interface{}, valueSet bool) error {
 	if field.Required != nil && *field.Required && !valueSet {
 		return fmt.Errorf("field needs to be set")
