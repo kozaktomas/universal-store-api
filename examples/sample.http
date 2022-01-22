@@ -8,7 +8,11 @@ Content-Type: application/json
   "lastname": "kozak",
   "email": "email@talko.cz",
   "born": "1991/04/21",
-  "height": 187
+  "height": 187,
+  "family": {
+    "daddy": "tata",
+    "mommy": "mama"
+  }
 }
 
 ### Get list of all people

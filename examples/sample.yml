@@ -26,6 +26,16 @@
       required: true
       min: 10
       max: 250
+    family: # nested object - same rules applied
+      type: "object"
+      required: true
+      fields:
+        daddy:
+          type: "string"
+          required: true
+        mommy:
+          type: "string"
+          required: true
 
 - name: dogs
   api:

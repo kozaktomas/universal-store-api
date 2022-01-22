@@ -8,27 +8,32 @@ Required options for data types are **bold** and you have to specify them in con
 
 ### string
 
-- required - bool - field is required
+- **required** - bool - field is required
 - min - int - min length of the string
 - max - int - max length of string
 - rule - validation rule (supported: `email`)
 
 ### date
 
-- required - bool - field is required
+- **required** - bool - field is required
 - **format** - string - date format (see first argument of `time.Parse` go function)
 
 ### int
 
-- required - bool - field is required
+- **required** - bool - field is required
 - min - int - min value
 - max - int - max value
 
 ### float
 
-- required - bool - field is required
+- **required** - bool - field is required
 - min - int - min value
 - max - int - max value
+
+### object
+
+- **required** - bool - field is required
+- **fields** - recursive object
 
 ## Supported storage types
 

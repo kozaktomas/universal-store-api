@@ -12,14 +12,13 @@ type Service struct {
 }
 
 func (e *Service) Validate(payload map[string]interface{}) error {
-	for fieldName, field := range e.Cfg.Fields {
-		value, ok := payload[fieldName]
-		if err := Validate(field, value, ok); err != nil {
-			return fmt.Errorf("field %q - %w", fieldName, err)
-		}
-	}
-
-	return nil
+	t := true
+	return Validate(config.FieldConfig{
+		Name:     "root",
+		Type:     "object",
+		Required: &t,
+		Fields:   &e.Cfg.Fields,
+	}, payload, true)
 }
 
 func (e *Service) Put(payload map[string]interface{}) error {

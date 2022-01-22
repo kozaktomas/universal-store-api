@@ -25,123 +25,157 @@ func ValidateServiceNames(names []string) error {
 }
 
 func Validate(field config.FieldConfig, value interface{}, valueSet bool) error {
+	// field required, not set
 	if field.Required != nil && *field.Required && !valueSet {
-		return fmt.Errorf("field needs to be set")
+		return fmt.Errorf("field %q: required", field.Name)
 	}
 
-	switch value.(type) {
-	case string:
-		return validateString(field, value.(string))
-	case float64:
-		return validateNumber(field, value.(float64), valueSet)
+	// field not required, not set
+	if field.Required != nil && !*field.Required && !valueSet {
+		return nil
 	}
 
-	panic("should never happen")
-}
-
-func validateNumber(field config.FieldConfig, value float64, valueSet bool) error {
+	var err error
 	fieldType, err := field.GetType()
 	if err != nil {
-		return err
+		return fmt.Errorf("filed %q: unknown type", field.Name)
 	}
 
-	if fieldType == config.FieldTypeInt {
-
-		// check if float64 is actually int
-		if value != float64(int(value)) {
-			return fmt.Errorf("int expected, float given")
+	switch fieldType {
+	case config.FieldTypeObject:
+		v, converted := value.(map[string]interface{})
+		if !converted {
+			return fmt.Errorf("field %q: could not expand object", field.Name)
 		}
-
-		intValue := int(value)
-
-		// check min value
-		if valueSet && field.Min != nil && intValue < *field.Min {
-			return fmt.Errorf("minimum is %d", *field.Min)
-		}
-
-		// check max value
-		if valueSet && field.Max != nil && intValue > *field.Max {
-			return fmt.Errorf("maximum is %d", *field.Max)
+		for n, f := range *field.Fields {
+			if err := Validate(*f, v[n], v[n] != nil); err != nil {
+				return err
+			}
 		}
 
 		return nil
+	case config.FieldTypeString:
+		strValue, converted := value.(string)
+		if !converted {
+			return fmt.Errorf("field %q: could not convert to string", field.Name)
+		}
+		return validateString(field, strValue)
+	case config.FieldTypeDate:
+		strValue, converted := value.(string)
+		if !converted {
+			return fmt.Errorf("field %q: could not convert to date", field.Name)
+		}
+		return validateDate(field, strValue)
+	case config.FieldTypeInt:
+		floatValue, converted := value.(float64)
+		if !converted {
+			return fmt.Errorf("field %q: could not convert to int", field.Name)
+		}
+		return validateInt(field, floatValue)
+	case config.FieldTypeFloat:
+		floatValue, converted := value.(float64)
+		if !converted {
+			return fmt.Errorf("field %q: could not convert to float", field.Name)
+		}
+		return validateFloat(field, floatValue)
 	}
 
-	if fieldType == config.FieldTypeFloat {
-		return nil
-	}
-
-	return fmt.Errorf("invalid type of string field %q", field.Type)
+	panic(fmt.Sprintf("should never happen; field: %s", field.Name))
 }
 
 func validateString(field config.FieldConfig, value string) error {
-	fieldType, err := field.GetType()
-	if err != nil {
-		return err
-	}
-
 	length := len(value)
 
-	if fieldType == config.FieldTypeString {
-
-		// required field
-		if field.Required != nil && *field.Required {
-			if length == 0 {
-				return fmt.Errorf("field needs to be set")
-			}
+	// required field
+	if field.Required != nil && *field.Required {
+		if length == 0 {
+			return fmt.Errorf("field %q: required", field.Name)
 		}
-
-		// min length field
-		if length > 0 && field.Min != nil && *field.Min > 0 {
-			if length < *field.Min {
-				return fmt.Errorf("min '%d' lenght required", *field.Min)
-			}
-		}
-
-		// max length field
-		if length > 0 && field.Max != nil && *field.Max > 0 {
-			if length > *field.Max {
-				return fmt.Errorf("max '%d' lenght required", *field.Max)
-			}
-		}
-
-		// check rules
-		if field.Rule != nil && len(*field.Rule) > 0 {
-
-			// email rule
-			if length > 0 && field.GetRule() == config.FieldRuleEmail {
-				_, err = mail.ParseAddress(value)
-				if err != nil {
-					return fmt.Errorf("valid email address required")
-				}
-			}
-		}
-		return nil
 	}
 
-	if fieldType == config.FieldTypeDate {
-
-		// required field
-		if field.Required != nil && *field.Required {
-			if length == 0 {
-				return fmt.Errorf("field needs to be set")
-			}
+	// min length field
+	if field.Min != nil && *field.Min > 0 {
+		if length < *field.Min {
+			return fmt.Errorf("field %q: min '%d' lenght required", field.Name, *field.Min)
 		}
+	}
 
-		// format
-		if field.Format != nil && *field.Format == "" {
-			return fmt.Errorf("format field is required for date type")
+	// max length field
+	if field.Max != nil && *field.Max > 0 {
+		if length > *field.Max {
+			return fmt.Errorf("field %q: max '%d' lenght required", field.Name, *field.Max)
 		}
+	}
 
-		if field.Format != nil && length > 0 {
-			_, err := time.Parse(*field.Format, value)
+	// check rules
+	if field.Rule != nil && len(*field.Rule) > 0 {
+
+		// email rule
+		if length > 0 && field.GetRule() == config.FieldRuleEmail {
+			_, err := mail.ParseAddress(value)
 			if err != nil {
-				return fmt.Errorf("could not parse date %q using format %q", value, *field.Format)
+				return fmt.Errorf("field %q: valid email address required", field.Name)
 			}
 		}
-
-		return nil
 	}
 
-	return fmt.Errorf("invalid type of string field %q", field.Type)
+	return nil
+}
+
+func validateDate(field config.FieldConfig, value string) error {
+	length := len(value)
+
+	// required field
+	if field.Required != nil && *field.Required {
+		if length == 0 {
+			return fmt.Errorf("field %q required", field.Name)
+		}
+	}
+
+	// format
+	if field.Format != nil && *field.Format == "" {
+		return fmt.Errorf("field %q: format is required for date type", field.Name)
+	}
+	if field.Format != nil && length > 0 {
+		_, err := time.Parse(*field.Format, value)
+		if err != nil {
+			return fmt.Errorf("field %q: could not parse date %q using format %q", field.Name, value, *field.Format)
+		}
+	}
+
+	return nil
+}
+
+func validateInt(field config.FieldConfig, value float64) error {
+	if value != float64(int(value)) {
+		return fmt.Errorf("field %q: could not convert float %f to int", field.Name, value)
+	}
+
+	intValue := int(value)
+
+	// check min value
+	if field.Min != nil && intValue < *field.Min {
+		return fmt.Errorf("field %q: minimum is %d", field.Name, *field.Min)
+	}
+
+	// check max value
+	if field.Max != nil && intValue > *field.Max {
+		return fmt.Errorf("field %q: maximum is %d", field.Name, *field.Max)
+	}
+
+	return nil
+}
+
+func validateFloat(field config.FieldConfig, value float64) error {
+	// check min value
+	if field.Min != nil && value < float64(*field.Min) {
+		return fmt.Errorf("field %q: minimum is %d", field.Name, *field.Min)
+	}
+
+	// check max value
+	if field.Max != nil && value > float64(*field.Max) {
+		return fmt.Errorf("field %q: maximum is %d", field.Name, *field.Max)
+	}
+
+	return nil
 }

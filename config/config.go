@@ -14,9 +14,9 @@ type Config struct {
 }
 
 type ServiceConfig struct {
-	Name      string                 `yaml:"name"`
-	ApiConfig ApiConfig              `yaml:"api"`
-	Fields    map[string]FieldConfig `yaml:"fields"`
+	Name      string                  `yaml:"name"`
+	ApiConfig ApiConfig               `yaml:"api"`
+	Fields    map[string]*FieldConfig `yaml:"fields"`
 }
 
 type ApiConfig struct {
@@ -34,11 +34,11 @@ type LimitsConfig struct {
 type FieldType uint8
 
 const (
-	FieldTypeUnknown FieldType = 0
-	FieldTypeString            = 1
-	FieldTypeInt               = 2
-	FieldTypeFloat             = 3
-	FieldTypeDate              = 4
+	FieldTypeObject FieldType = 0
+	FieldTypeString           = 1
+	FieldTypeInt              = 2
+	FieldTypeFloat            = 3
+	FieldTypeDate             = 4
 )
 
 type FieldRule uint8
@@ -49,12 +49,14 @@ const (
 )
 
 type FieldConfig struct {
-	Type     string  `yaml:"type"`
-	Required *bool   `yaml:"required,omitempty"`
-	Min      *int    `yaml:"min,omitempty"`
-	Max      *int    `yaml:"max,omitempty"`
-	Format   *string `yaml:"format,omitempty"`
-	Rule     *string `yaml:"rule,omitempty"`
+	Name     string
+	Type     string                   `yaml:"type"`
+	Required *bool                    `yaml:"required,omitempty"`
+	Min      *int                     `yaml:"min,omitempty"`
+	Max      *int                     `yaml:"max,omitempty"`
+	Format   *string                  `yaml:"format,omitempty"`
+	Rule     *string                  `yaml:"rule,omitempty"`
+	Fields   *map[string]*FieldConfig `yaml:"fields"`
 }
 
 type Limit struct {
@@ -85,7 +87,24 @@ func ParseConfig(filename string) (*Config, error) {
 		return nil, fmt.Errorf("could not unmarshal yaml data from file %q", filename)
 	}
 
-	return &Config{ServiceConfigs: apiConfigs}, nil
+	// backfill names from map keys to map values
+	for _, service := range apiConfigs {
+		for name, field := range service.Fields {
+			fulfillFieldNames(name, field)
+		}
+	}
+	cfg := Config{ServiceConfigs: apiConfigs}
+
+	return &cfg, nil
+}
+
+func fulfillFieldNames(name string, cfg *FieldConfig) {
+	cfg.Name = name
+	if cfg.Fields != nil {
+		for n, f := range *cfg.Fields {
+			fulfillFieldNames(n, f)
+		}
+	}
 }
 
 func (l LimitsConfig) ParseGet() (Limit, error) {
@@ -130,6 +149,7 @@ func (f FieldConfig) GetType() (FieldType, error) {
 		"int":    FieldTypeInt,
 		"float":  FieldTypeFloat,
 		"date":   FieldTypeDate,
+		"object": FieldTypeObject,
 	}
 
 	fieldType, ok := mapping[f.Type]
@@ -137,7 +157,7 @@ func (f FieldConfig) GetType() (FieldType, error) {
 		return fieldType, nil
 	}
 
-	return FieldTypeUnknown, fmt.Errorf("could not resolve type for %s", f.Type)
+	return FieldTypeObject, fmt.Errorf("could not resolve type for %s", f.Type)
 }
 
 func (f FieldConfig) GetRule() FieldRule {
