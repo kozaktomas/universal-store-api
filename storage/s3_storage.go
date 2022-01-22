@@ -86,7 +86,7 @@ func (storage *s3Storage) loadService(serviceName string) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("could not list s3 objects with prefix %s", prefix)
+		return fmt.Errorf("could not list s3 objects with prefix %s: %w", prefix, err)
 	}
 
 	for _, object := range list.Contents {
