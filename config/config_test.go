@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -64,7 +65,7 @@ func TestParseLimit(t *testing.T) {
 }
 
 func TestSampleConfig(t *testing.T) {
-	cfg, err := ParseConfig("./../examples/sample.yml")
+	cfg, err := ParseConfig("./../examples/sample.yml", logrus.New())
 	assert.Nil(t, err)
 
 	assert.Len(t, cfg.GetServiceNames(), 2)

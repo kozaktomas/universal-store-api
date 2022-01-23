@@ -9,21 +9,19 @@
   fields:
     firstname:
       type: "string"
-      min: 2
-      required: true
     lastname:
       type: "string"
       required: true
+      min: 1
+      max: 50
     email:
       type: "string"
-      required: true
       rule: "email"
     born:
       type: "date"
       format: "2006/01/02"
     height:
       type: int
-      required: true
       min: 10
       max: 250
     family: # nested object - same rules applied

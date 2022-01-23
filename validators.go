@@ -31,6 +31,11 @@ func Validate(field config.FieldConfig, value interface{}, valueSet bool) error 
 	}
 
 	// field not required, not set
+	if field.Required == nil && !valueSet {
+		return nil
+	}
+
+	// field not required, not set
 	if field.Required != nil && !*field.Required && !valueSet {
 		return nil
 	}
@@ -131,6 +136,18 @@ func validateArray(field config.FieldConfig, value []interface{}) error {
 func validateString(field config.FieldConfig, value string) error {
 	length := len(value)
 
+	// check rules
+	if field.Rule != nil && len(*field.Rule) > 0 {
+
+		// email rule
+		if field.GetRule() == config.FieldRuleEmail {
+			_, err := mail.ParseAddress(value)
+			if err != nil {
+				return fmt.Errorf("field %q: valid email address required", field.Name)
+			}
+		}
+	}
+
 	// required field
 	if field.Required != nil && *field.Required {
 		if length == 0 {
@@ -149,18 +166,6 @@ func validateString(field config.FieldConfig, value string) error {
 	if field.Max != nil && *field.Max > 0 {
 		if length > *field.Max {
 			return fmt.Errorf("field %q: max '%d' lenght required", field.Name, *field.Max)
-		}
-	}
-
-	// check rules
-	if field.Rule != nil && len(*field.Rule) > 0 {
-
-		// email rule
-		if length > 0 && field.GetRule() == config.FieldRuleEmail {
-			_, err := mail.ParseAddress(value)
-			if err != nil {
-				return fmt.Errorf("field %q: valid email address required", field.Name)
-			}
 		}
 	}
 

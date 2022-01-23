@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/go-yaml/yaml"
+	"github.com/sirupsen/logrus"
 	"os"
 	"regexp"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 
 type Config struct {
 	ServiceConfigs []ServiceConfig
+	logger         *logrus.Logger
 }
 
 type ServiceConfig struct {
@@ -68,17 +70,7 @@ type Limit struct {
 	Unlimited bool
 }
 
-func (c Config) GetServiceNames() []string {
-	var services []string
-
-	for _, service := range c.ServiceConfigs {
-		services = append(services, service.Name)
-	}
-
-	return services
-}
-
-func ParseConfig(filename string) (*Config, error) {
+func ParseConfig(filename string, logger *logrus.Logger) (*Config, error) {
 	var apiConfigs []ServiceConfig
 	content, err := os.ReadFile(filename)
 	if err != nil {
@@ -95,9 +87,101 @@ func ParseConfig(filename string) (*Config, error) {
 			fulfillFieldNames(name, field)
 		}
 	}
-	cfg := Config{ServiceConfigs: apiConfigs}
+	cfg := Config{
+		ServiceConfigs: apiConfigs,
+		logger:         logger,
+	}
 
 	return &cfg, nil
+}
+
+func (c *Config) GetServiceNames() []string {
+	var services []string
+
+	for _, service := range c.ServiceConfigs {
+		services = append(services, service.Name)
+	}
+
+	return services
+}
+
+func (c *Config) Validate() error {
+	for _, serviceConfig := range c.ServiceConfigs {
+		for _, fc := range serviceConfig.Fields {
+			if err := c.validateFieldConfig(fc); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (c *Config) validateFieldConfig(fc *FieldConfig) error {
+	name := fc.Name
+	fieldType, err := fc.GetType()
+	if err != nil {
+		return fmt.Errorf("could not get type of field %q: %w", name, err)
+	}
+
+	switch fieldType {
+	case FieldTypeObject:
+		if fc.Fields == nil {
+			return fmt.Errorf("field config error %q: child fields must be specified", name)
+		}
+		if len(*fc.Fields) == 0 {
+			return fmt.Errorf("field config error %q: at least one field must be specifid", name)
+		}
+		for _, f := range *fc.Fields {
+			if err = c.validateFieldConfig(f); err != nil {
+				return err
+			}
+		}
+	case FieldTypeArray:
+		if fc.Min != nil && *fc.Min < 1 {
+			return fmt.Errorf("field config error %q: minimal lenght of array must be >= 1", name)
+		}
+		if fc.Max != nil && *fc.Max < 1 {
+			return fmt.Errorf("field config error %q: maximal lenght of array must be >= 1", name)
+		}
+		if fc.Min != nil && fc.Max != nil && *fc.Min > *fc.Max {
+			return fmt.Errorf("field config error %q: invalid setting of min/max - min > max", name)
+		}
+		if fc.Items == nil {
+			return fmt.Errorf("field config error %q: items must be specified", name)
+		}
+		if err = c.validateFieldConfig(fc.Items); err != nil {
+			return err
+		}
+	case FieldTypeString:
+		if fc.Min != nil && *fc.Min < 1 {
+			return fmt.Errorf("field config error %q: minimal string lenght >= 1", name)
+		}
+		if fc.Max != nil && *fc.Max < 1 {
+			return fmt.Errorf("field config error %q: maximum string lenght >= 1", name)
+		}
+		if fc.Min != nil && fc.Max != nil && *fc.Min > *fc.Max {
+			return fmt.Errorf("field config error %q: invalid setting of min/max - min > max", name)
+		}
+		if fc.Rule != nil {
+			mapping := fc.GetRulesMapping()
+			_, ok := mapping[*fc.Rule]
+			if !ok {
+				return fmt.Errorf("field config error %q: invalid rule type: %q", name, *fc.Rule)
+			}
+		}
+	case FieldTypeDate:
+		if fc.Format == nil {
+			return fmt.Errorf("field %q: format must be defined for date type", name)
+		} else {
+			c.logger.Infof("field %q is date, please call the enpoint and test date format", name)
+		}
+	case FieldTypeInt, FieldTypeFloat:
+		if fc.Min != nil && fc.Max != nil && *fc.Min > *fc.Max {
+			return fmt.Errorf("field config error %q: invalid setting of min/max - min > max", name)
+		}
+	}
+
+	return nil
 }
 
 func fulfillFieldNames(name string, cfg *FieldConfig) {
@@ -167,15 +251,18 @@ func (f FieldConfig) GetType() (FieldType, error) {
 	return FieldTypeObject, fmt.Errorf("could not resolve type for %s", f.Type)
 }
 
-func (f FieldConfig) GetRule() FieldRule {
-	mapping := map[string]FieldRule{
+func (f FieldConfig) GetRulesMapping() map[string]FieldRule {
+	return map[string]FieldRule{
 		"email": FieldRuleEmail,
 	}
+}
 
+func (f FieldConfig) GetRule() FieldRule {
 	if f.Rule == nil {
 		return FieldRuleUnspecified
 	}
 
+	mapping := f.GetRulesMapping()
 	fieldFormat, ok := mapping[*f.Rule]
 	if !ok {
 		return FieldRuleUnspecified

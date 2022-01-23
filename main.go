@@ -28,9 +28,13 @@ func run() {
 	logger := createLogger()
 	logger.Info("Program starting...")
 
-	cfg, err := config.ParseConfig(*runCommandConfig)
+	cfg, err := config.ParseConfig(*runCommandConfig, logger)
 	if err != nil {
 		logger.WithError(err).Fatalf("could not parse configuration")
+	}
+
+	if err = cfg.Validate(); err != nil {
+		logger.WithError(err).Fatalf("invalid configuration file")
 	}
 
 	serviceNames := cfg.GetServiceNames()
