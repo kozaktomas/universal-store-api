@@ -20,6 +20,23 @@ func TestValidateServiceNames(t *testing.T) {
 	}
 }
 
+func TestValidateArray(t *testing.T) {
+	min := 2
+	max := 4
+	field := config.FieldConfig{
+		Type:  "array",
+		Min:   &min,
+		Max:   &max,
+		Items: &config.FieldConfig{Type: "int"},
+	}
+
+	assert.Error(t, validateArray(field, []interface{}{1})) // min limit
+	assert.NoError(t, validateArray(field, []interface{}{1, 2}))
+	assert.NoError(t, validateArray(field, []interface{}{1, 2, 3}))
+	assert.NoError(t, validateArray(field, []interface{}{1, 2, 3, 4}))
+	assert.Error(t, validateArray(field, []interface{}{1, 2, 3, 4, 5})) // max limit
+}
+
 func TestValidateString(t *testing.T) {
 	min := 5
 	max := 10

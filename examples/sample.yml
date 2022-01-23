@@ -36,6 +36,26 @@
         mommy:
           type: "string"
           required: true
+    tags:
+      type: "array" # nested object, array, anything (perhaps)
+      required: false
+      items:
+        type: "object"
+        fields:
+          name:
+            type: "string"
+            required: true
+          value:
+            type: "string"
+            required: true
+    nums:
+      type: array
+      required: true  # at lease one item required
+      min: 2          # max items in array
+      max: 5          # min items in array
+      items:
+        type: "int"
+        min: 5       # minimum number value
 
 - name: dogs
   api:

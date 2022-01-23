@@ -35,10 +35,11 @@ type FieldType uint8
 
 const (
 	FieldTypeObject FieldType = 0
-	FieldTypeString           = 1
-	FieldTypeInt              = 2
-	FieldTypeFloat            = 3
-	FieldTypeDate             = 4
+	FieldTypeArray            = 1
+	FieldTypeString           = 2
+	FieldTypeInt              = 3
+	FieldTypeFloat            = 4
+	FieldTypeDate             = 5
 )
 
 type FieldRule uint8
@@ -57,6 +58,7 @@ type FieldConfig struct {
 	Format   *string                  `yaml:"format,omitempty"`
 	Rule     *string                  `yaml:"rule,omitempty"`
 	Fields   *map[string]*FieldConfig `yaml:"fields"`
+	Items    *FieldConfig             `yaml:"items"`
 }
 
 type Limit struct {
@@ -105,6 +107,10 @@ func fulfillFieldNames(name string, cfg *FieldConfig) {
 			fulfillFieldNames(n, f)
 		}
 	}
+
+	if cfg.Items != nil {
+		fulfillFieldNames("array", cfg.Items)
+	}
 }
 
 func (l LimitsConfig) ParseGet() (Limit, error) {
@@ -145,11 +151,12 @@ func (l LimitsConfig) ParseDelete() (Limit, error) {
 
 func (f FieldConfig) GetType() (FieldType, error) {
 	mapping := map[string]FieldType{
+		"object": FieldTypeObject,
+		"array":  FieldTypeArray,
 		"string": FieldTypeString,
 		"int":    FieldTypeInt,
 		"float":  FieldTypeFloat,
 		"date":   FieldTypeDate,
-		"object": FieldTypeObject,
 	}
 
 	fieldType, ok := mapping[f.Type]

@@ -54,6 +54,20 @@ func Validate(field config.FieldConfig, value interface{}, valueSet bool) error 
 		}
 
 		return nil
+	case config.FieldTypeArray:
+		v, converted := value.([]interface{})
+		if !converted {
+			return fmt.Errorf("field %q: could not expand array", field.Name)
+		}
+		if err = validateArray(field, v); err != nil {
+			return err
+		}
+		for _, item := range v {
+			if err = Validate(*field.Items, item, true); err != nil {
+				return fmt.Errorf("field %q: %w", field.Name, err)
+			}
+		}
+		return nil
 	case config.FieldTypeString:
 		strValue, converted := value.(string)
 		if !converted {
@@ -81,6 +95,37 @@ func Validate(field config.FieldConfig, value interface{}, valueSet bool) error 
 	}
 
 	panic(fmt.Sprintf("should never happen; field: %s", field.Name))
+}
+
+func validateArray(field config.FieldConfig, value []interface{}) error {
+	if field.Items == nil {
+		return fmt.Errorf("field %q: array items are not defined", field.Name)
+	}
+
+	// if required, at least one = min 1
+	if field.Required != nil && *field.Required && field.Min == nil {
+		onePtr := 1
+		field.Min = &onePtr
+	}
+	if field.Required != nil && *field.Required && field.Min != nil && *field.Min < 1 {
+		onePtr := 1
+		field.Min = &onePtr
+	}
+
+	length := len(value)
+	if field.Min != nil {
+		if length < *field.Min {
+			return fmt.Errorf("field %q: at least %d items required", field.Name, *field.Min)
+		}
+	}
+
+	if field.Max != nil {
+		if length > *field.Max {
+			return fmt.Errorf("field %q: at most %d items allowed", field.Name, *field.Max)
+		}
+	}
+
+	return nil
 }
 
 func validateString(field config.FieldConfig, value string) error {

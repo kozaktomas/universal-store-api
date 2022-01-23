@@ -12,7 +12,18 @@ Content-Type: application/json
   "family": {
     "daddy": "tata",
     "mommy": "mama"
-  }
+  },
+  "tags": [
+    {
+      "name": "fv_color",
+      "value": "green"
+    }
+  ],
+  "nums": [
+    6,
+    7,
+    8
+  ]
 }
 
 ### Get list of all people

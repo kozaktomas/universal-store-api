@@ -78,5 +78,5 @@ func TestSampleConfig(t *testing.T) {
 	assert.Equal(t, time.Minute, putLimit.Interval)
 	assert.Equal(t, false, putLimit.Disabled)
 	assert.Equal(t, false, putLimit.Unlimited)
-	assert.Len(t, people.Fields, 6)
+	assert.Len(t, people.Fields, 8)
 }
