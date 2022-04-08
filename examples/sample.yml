@@ -1,4 +1,5 @@
 - name: people
+  client: "http://localhost:3000" # value for CORS - optional
   api:
     bearer: "xyz"         # no password when empty or missing
     limits:
@@ -56,6 +57,7 @@
         min: 5       # minimum number value
 
 - name: dogs
+  client: "http://localhost:3100"
   api:
     bearer: ""
     limits:
