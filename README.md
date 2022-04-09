@@ -2,97 +2,81 @@
 
 [![Go](https://github.com/kozaktomas/universal-store-api/actions/workflows/go.yml/badge.svg)](https://github.com/kozaktomas/universal-store-api/actions/workflows/go.yml)
 
-## Supported field types
+Extremely easy way how to create REST API. All you need to do is create a configuration file with definitions of your
+API and prepare backend to store all of these data (multiple backends supported). Then you can simply run it anywhere
+because USA is just one small binary file (also shipped as Docker image).
 
-Required options for data types are **bold** and you have to specify them in configuration file.
+## Example of API configuration file:
 
-### string
-
-- required - bool - field is required
-- min - int - min length of the string
-- max - int - max length of string
-- rule - validation rule (supported: `email`)
-
-### date
-
-- required - bool - field is required
-- **format** - string - date format (see first argument of `time.Parse` go function)
-
-### int
-
-- required - bool - field is required
-- min - int - min value
-- max - int - max value
-
-### float
-
-- required - bool - field is required
-- min - int - min value
-- max - int - max value
-
-### object
-
-- required - bool - field is required
-- **fields** - recursive object
-
-### array
-
-- required - bool - field is required
-- min - min count of items in array
-- max - max count of items in array
-- **items** - specification of items in array - same as any other type (int, string, object, ...)
-
-## Supported storage types
-
-### mem
-
-- data are stored in runtime memory. Data will be lost after server restart. Useful for testing, useless for production.
-
-### s3
-
-* it actually uses mem storage but mutable operations (PUT and DELETE) also syncs object storage (S3). It also loads
-  existing object on startup.
-* object storage needs to be configured using environment variables:
-    * `AWS_ACCESS_KEY`
-    * `AWS_SECRET_KEY`
-    * `AWS_BUCKET_NAME`
-    * `AWS_REGION` - (e.g. `eu-west-1`)
-    * `AWS_S3_ENDPOINT` (e.g. `http://localhost:9000`)
-
-### filesystem
-
-- not implemented
-
-## Advanced configuration
-
-### Logging level
-
-Please use environment variable `LOG_LEVEL` to specify requested logging level. Available values:
-
-* `panic`
-* `fatal`
-* `error`
-* `warn`, `warning`
-* `info`
-* `debug`
-* `trace`
-
-You can also specify password for logging level change endpoint. The endpoint won't work without password. You can set
-up the password using `LOG_LEVEL_API_KEY` environment variable.
-
+```yaml
+- name: people
+  client: "http://localhost:3000" # value for CORS - optional
+  api:
+    bearer: "xyz"           # API auth
+    limits: # API rate limits
+      list: "0"             # unlimited
+      get: "0"              # unlimited
+      put: "5m"             # 5 requests / minute [s,m,h,d - available]
+      delete: "-1"          # endpoint disabled
+  fields:
+    firstname:
+      type: "string"
+      required: false
+    lastname:
+      type: "string"
+      required: true
+      min: 1                # min length of lastname field
+      max: 50               # max length of lastname field
+    email:
+      type: "string"
+      rule: "email"         # field must contain valid email address
+      required: true
 ```
-POST http://localhost:8080/log_level
-Authorization: Bearer LOG_LEVEL_API_KEY
+
+## Run the app
+
+```bash
+# use config file with memory store
+./universal-store-api run path/to/config.yml mem 
+```
+
+## HTTP API
+
+### Create entity
+
+```http request
+PUT http://localhost:8080/people
+Authorization: Bearer xyz
 Content-Type: application/json
 
 {
-  "level": "trace"
+  "firstname": "tomas",
+  "lastname": "kozak",
+  "email": "email@talko.cz"
 }
 ```
 
-## Reserved service names
+### Get list of entities
 
-Some names are reserved and cannot be used as a service name.
+```http request
+GET http://localhost:8080/people
+Authorization: Bearer xyz
+```
 
-* `metrics`
-* `log_level`
+### Get entity detail
+
+```http request
+GET http://localhost:8080/people/[ENTITY-ID]
+Authorization: Bearer xyz
+```
+
+### Delete entity
+
+```http request
+DELETE http://localhost:8080/people/[ENTITY-ID]
+Authorization: Bearer xyz
+```
+
+## Current limitation
+
+USA does not support paginating. It's not recommended using USA for project with more than 1000 entities. 
