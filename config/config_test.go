@@ -72,7 +72,7 @@ func TestSampleConfig(t *testing.T) {
 
 	people := cfg.ServiceConfigs[0]
 	assert.Equal(t, "people", people.Name)
-	assert.Equal(t, "http://localhost:3000", people.Client)
+	assert.Equal(t, "http://localhost:3000", *people.ApiConfig.Client)
 	assert.Equal(t, "xyz", *people.ApiConfig.Bearer)
 	putLimit, err := people.ApiConfig.Limits.ParsePut()
 	assert.Nil(t, err)

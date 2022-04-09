@@ -17,13 +17,13 @@ type Config struct {
 
 type ServiceConfig struct {
 	Name      string                  `yaml:"name"`
-	Client    string                  `json:"client"` // Access-Control-Allow-Origin header
 	ApiConfig ApiConfig               `yaml:"api"`
 	Fields    map[string]*FieldConfig `yaml:"fields"`
 }
 
 type ApiConfig struct {
 	Bearer *string      `yaml:"bearer"`
+	Client *string      `yaml:"client"` // Access-Control-Allow-Origin header
 	Limits LimitsConfig `yaml:"limits"`
 }
 

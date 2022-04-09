@@ -100,7 +100,7 @@ func (server *httpServer) registerHandlers(endpoint Service) error {
 			server.engine.Handle(
 				h.httpMethod,
 				h.url,
-				createCORSMiddleware(endpoint.Cfg.Client),
+				createCORSMiddleware(endpoint),
 				server.createAuthMiddleware(endpoint),
 				createRateLimiterMiddleware(hLimit),
 				h.callbackFunc,
@@ -312,12 +312,13 @@ func createRateLimiterMiddleware(limit config.Limit) gin.HandlerFunc {
 	return lm.Middleware()
 }
 
-func createCORSMiddleware(clientUrl string) gin.HandlerFunc {
+func createCORSMiddleware(endpoint Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if clientUrl == "" {
-			clientUrl = "*"
+		origin := "*"
+		if endpoint.Cfg.ApiConfig.Client != nil && len(*endpoint.Cfg.ApiConfig.Client) > 0 {
+			origin = *endpoint.Cfg.ApiConfig.Client
 		}
-		c.Writer.Header().Set("Access-Control-Allow-Origin", clientUrl)
+		c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
