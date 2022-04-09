@@ -79,7 +79,7 @@ func (server *httpServer) registerHandlers(endpoint Service) error {
 		},
 		{
 			httpMethod:   http.MethodOptions,
-			url:          "/",
+			url:          "",
 			limitFunc:    endpoint.Cfg.ApiConfig.Limits.ParsePut,
 			callbackFunc: func(c *gin.Context) {},
 		},
