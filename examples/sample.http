@@ -34,7 +34,7 @@ Authorization: Bearer xyz
 GET http://localhost:8080/people/6a10dd3f-b291-4c03-7a05-7195b7a26ffe
 Authorization: Bearer xyz
 
-### Delete person from the list
+### Delete person from the list (delete is disabled in configuration)
 DELETE http://localhost:8080/people/f1bc757c-8e3a-436d-6b50-c37ee8d0d65f
 Authorization: Bearer xyz
 

@@ -1,7 +1,7 @@
 - name: people
   api:
-    client: "http://localhost:3000" # value for CORS - optional
-    bearer: "xyz"                   # no password when empty or missing
+    client: "localhost"     # value for CORS - optional
+    bearer: "xyz"           # no password when empty or missing
     limits:
       list: "0"             # unlimited
       get: "0"              # unlimited
@@ -58,13 +58,13 @@
 
 - name: dogs
   api:
-    client: "http://localhost:3100"
+    client: "localhost"
     bearer: ""
     limits:
       list: "0"
       get: "0"
       put: "5m"
-      delete: "-1"
+      delete: "1m"
   fields:
     name:
       type: "string"

@@ -67,29 +67,39 @@ func (server *httpServer) registerHandlers(endpoint Service) error {
 	handlers := []handler{
 		{
 			httpMethod:   http.MethodGet,
-			url:          fmt.Sprintf("/%s", name),
+			url:          "",
 			limitFunc:    endpoint.Cfg.ApiConfig.Limits.ParseList,
 			callbackFunc: server.createListEndpoint(endpoint),
 		},
 		{
 			httpMethod:   http.MethodGet,
-			url:          fmt.Sprintf("/%s/:id", name),
+			url:          "/:id",
 			limitFunc:    endpoint.Cfg.ApiConfig.Limits.ParseGet,
 			callbackFunc: server.createGetEndpoint(endpoint),
 		},
 		{
+			httpMethod:   http.MethodOptions,
+			url:          "/",
+			limitFunc:    endpoint.Cfg.ApiConfig.Limits.ParsePut,
+			callbackFunc: func(c *gin.Context) {},
+		},
+		{
 			httpMethod:   http.MethodPut,
-			url:          fmt.Sprintf("/%s", name),
+			url:          "",
 			limitFunc:    endpoint.Cfg.ApiConfig.Limits.ParsePut,
 			callbackFunc: server.createPutEndpoint(endpoint),
 		},
 		{
 			httpMethod:   http.MethodDelete,
-			url:          fmt.Sprintf("/%s/:id", name),
+			url:          "/:id",
 			limitFunc:    endpoint.Cfg.ApiConfig.Limits.ParseDelete,
 			callbackFunc: server.createDeleteEndpoint(endpoint),
 		},
 	}
+
+	group := server.engine.Group(fmt.Sprintf("/%s", name))
+	group.Use(createCORSMiddleware(endpoint))
+	group.Use(server.createAuthMiddleware(endpoint))
 
 	for _, h := range handlers {
 		hLimit, err := h.limitFunc()
@@ -97,11 +107,9 @@ func (server *httpServer) registerHandlers(endpoint Service) error {
 			return err
 		}
 		if !hLimit.Disabled {
-			server.engine.Handle(
+			group.Handle(
 				h.httpMethod,
 				h.url,
-				createCORSMiddleware(endpoint),
-				server.createAuthMiddleware(endpoint),
 				createRateLimiterMiddleware(hLimit),
 				h.callbackFunc,
 			)
