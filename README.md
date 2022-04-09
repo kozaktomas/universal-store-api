@@ -10,8 +10,8 @@ because USA is just one small binary file (also shipped as Docker image).
 
 ```yaml
 - name: people
-  client: "http://localhost:3000" # value for CORS - optional
   api:
+    client: "domain.com"    # value for CORS - optional
     bearer: "xyz"           # API auth
     limits: # API rate limits
       list: "0"             # unlimited
