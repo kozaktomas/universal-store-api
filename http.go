@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	ginlimiter "github.com/julianshen/gin-limiter"
-	"github.com/kozaktomas/universal-store-api/config"
 	"github.com/sirupsen/logrus"
 	ginlogrus "github.com/toorop/gin-logrus"
 	ginprometheus "github.com/zsais/go-gin-prometheus"
@@ -56,7 +55,7 @@ func createHttpServer(endpoints map[string]Service, logger *logrus.Logger) (*htt
 func (server *httpServer) registerHandlers(endpoint Service) error {
 	name := endpoint.Cfg.Name
 
-	type limitFunc func() (config.Limit, error)
+	type limitFunc func() (Limit, error)
 	type handler struct {
 		httpMethod   string
 		url          string
@@ -306,7 +305,7 @@ func (server *httpServer) Run(port int) {
 	server.logger.Info("Server exiting...")
 }
 
-func createRateLimiterMiddleware(limit config.Limit) gin.HandlerFunc {
+func createRateLimiterMiddleware(limit Limit) gin.HandlerFunc {
 	if limit.Unlimited {
 		return func(c *gin.Context) {
 			// unlimited

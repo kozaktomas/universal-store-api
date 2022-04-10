@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/kozaktomas/universal-store-api/config"
 	"net/mail"
 	"time"
 )
@@ -24,7 +23,7 @@ func ValidateServiceNames(names []string) error {
 	return nil
 }
 
-func Validate(field config.FieldConfig, value interface{}, valueSet bool) error {
+func Validate(field FieldConfig, value interface{}, valueSet bool) error {
 	// field required, not set
 	if field.Required != nil && *field.Required && !valueSet {
 		return fmt.Errorf("field %q: required", field.Name)
@@ -47,7 +46,7 @@ func Validate(field config.FieldConfig, value interface{}, valueSet bool) error 
 	}
 
 	switch fieldType {
-	case config.FieldTypeObject:
+	case FieldTypeObject:
 		v, converted := value.(map[string]interface{})
 		if !converted {
 			return fmt.Errorf("field %q: could not expand object", field.Name)
@@ -59,7 +58,7 @@ func Validate(field config.FieldConfig, value interface{}, valueSet bool) error 
 		}
 
 		return nil
-	case config.FieldTypeArray:
+	case FieldTypeArray:
 		v, converted := value.([]interface{})
 		if !converted {
 			return fmt.Errorf("field %q: could not expand array", field.Name)
@@ -73,25 +72,25 @@ func Validate(field config.FieldConfig, value interface{}, valueSet bool) error 
 			}
 		}
 		return nil
-	case config.FieldTypeString:
+	case FieldTypeString:
 		strValue, converted := value.(string)
 		if !converted {
 			return fmt.Errorf("field %q: could not convert to string", field.Name)
 		}
 		return validateString(field, strValue)
-	case config.FieldTypeDate:
+	case FieldTypeDate:
 		strValue, converted := value.(string)
 		if !converted {
 			return fmt.Errorf("field %q: could not convert to date", field.Name)
 		}
 		return validateDate(field, strValue)
-	case config.FieldTypeInt:
+	case FieldTypeInt:
 		floatValue, converted := value.(float64)
 		if !converted {
 			return fmt.Errorf("field %q: could not convert to int", field.Name)
 		}
 		return validateInt(field, floatValue)
-	case config.FieldTypeFloat:
+	case FieldTypeFloat:
 		floatValue, converted := value.(float64)
 		if !converted {
 			return fmt.Errorf("field %q: could not convert to float", field.Name)
@@ -102,7 +101,7 @@ func Validate(field config.FieldConfig, value interface{}, valueSet bool) error 
 	panic(fmt.Sprintf("should never happen; field: %s", field.Name))
 }
 
-func validateArray(field config.FieldConfig, value []interface{}) error {
+func validateArray(field FieldConfig, value []interface{}) error {
 	if field.Items == nil {
 		return fmt.Errorf("field %q: array items are not defined", field.Name)
 	}
@@ -133,14 +132,14 @@ func validateArray(field config.FieldConfig, value []interface{}) error {
 	return nil
 }
 
-func validateString(field config.FieldConfig, value string) error {
+func validateString(field FieldConfig, value string) error {
 	length := len(value)
 
 	// check rules
 	if field.Rule != nil && len(*field.Rule) > 0 {
 
 		// email rule
-		if field.GetRule() == config.FieldRuleEmail {
+		if field.GetRule() == FieldRuleEmail {
 			_, err := mail.ParseAddress(value)
 			if err != nil {
 				return fmt.Errorf("field %q: valid email address required", field.Name)
@@ -172,7 +171,7 @@ func validateString(field config.FieldConfig, value string) error {
 	return nil
 }
 
-func validateDate(field config.FieldConfig, value string) error {
+func validateDate(field FieldConfig, value string) error {
 	length := len(value)
 
 	// required field
@@ -196,7 +195,7 @@ func validateDate(field config.FieldConfig, value string) error {
 	return nil
 }
 
-func validateInt(field config.FieldConfig, value float64) error {
+func validateInt(field FieldConfig, value float64) error {
 	if value != float64(int(value)) {
 		return fmt.Errorf("field %q: could not convert float %f to int", field.Name, value)
 	}
@@ -216,7 +215,7 @@ func validateInt(field config.FieldConfig, value float64) error {
 	return nil
 }
 
-func validateFloat(field config.FieldConfig, value float64) error {
+func validateFloat(field FieldConfig, value float64) error {
 	// check min value
 	if field.Min != nil && value < float64(*field.Min) {
 		return fmt.Errorf("field %q: minimum is %d", field.Name, *field.Min)

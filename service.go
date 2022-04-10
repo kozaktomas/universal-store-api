@@ -2,18 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/kozaktomas/universal-store-api/config"
-	"github.com/kozaktomas/universal-store-api/storage"
 )
 
 type Service struct {
-	Cfg     config.ServiceConfig
-	Storage storage.Storage
+	Cfg     ServiceConfig
+	Storage Storage
 }
 
 func (e *Service) Validate(payload map[string]interface{}) error {
 	t := true
-	return Validate(config.FieldConfig{
+	return Validate(FieldConfig{
 		Name:     "root",
 		Type:     "object",
 		Required: &t,
@@ -30,11 +28,11 @@ func (e *Service) Put(payload map[string]interface{}) error {
 	return nil
 }
 
-func (e *Service) List() ([]storage.Entity, error) {
+func (e *Service) List() ([]Entity, error) {
 	return e.Storage.List(e.Cfg.Name)
 }
 
-func (e *Service) Get(id string) (storage.Entity, error) {
+func (e *Service) Get(id string) (Entity, error) {
 	return e.Storage.Get(e.Cfg.Name, id)
 }
 

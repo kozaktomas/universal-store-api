@@ -1,4 +1,4 @@
-package config
+package main
 
 import (
 	"github.com/sirupsen/logrus"
@@ -65,7 +65,7 @@ func TestParseLimit(t *testing.T) {
 }
 
 func TestSampleConfig(t *testing.T) {
-	cfg, err := ParseConfig("./../examples/sample.yml", logrus.New())
+	cfg, err := ParseConfig("./examples/sample.yml", logrus.New())
 	assert.Nil(t, err)
 
 	assert.Len(t, cfg.GetServiceNames(), 2)

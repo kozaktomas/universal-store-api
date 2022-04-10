@@ -1,8 +1,6 @@
 package main
 
 import (
-	"github.com/kozaktomas/universal-store-api/config"
-	"github.com/kozaktomas/universal-store-api/storage"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
@@ -28,7 +26,7 @@ func run() {
 	logger := createLogger()
 	logger.Info("Program starting...")
 
-	cfg, err := config.ParseConfig(*runCommandConfig, logger)
+	cfg, err := ParseConfig(*runCommandConfig, logger)
 	if err != nil {
 		logger.WithError(err).Fatalf("could not parse configuration")
 	}
@@ -42,7 +40,7 @@ func run() {
 		logger.WithError(err).Fatalf("service name validation falied")
 	}
 
-	stg, err := storage.CreateStorageByType(*runCommandStorageType, serviceNames)
+	stg, err := CreateStorageByType(*runCommandStorageType, serviceNames)
 	if err != nil {
 		logger.WithError(err).Fatalf("could not create storage")
 	}

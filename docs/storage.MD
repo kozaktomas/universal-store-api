@@ -8,6 +8,7 @@
 
 * it actually uses mem storage but mutable operations (PUT and DELETE) also syncs object storage (S3). It also loads
   existing object on startup.
+* Do not use for more than 1000 entities
 * object storage needs to be configured using environment variables:
     * `AWS_ACCESS_KEY`
     * `AWS_SECRET_KEY`
