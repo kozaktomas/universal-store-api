@@ -18,3 +18,6 @@ sample_mem: compile test
 
 sample_s3: compile test
 	./universal-store-api -v run examples/sample.yml s3
+
+sample_firestore: compile test
+	./universal-store-api -v run examples/sample.yml firestore

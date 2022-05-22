@@ -38,6 +38,8 @@ func CreateStorageByType(storageType string, serviceNames []string) (Storage, er
 		return CreateMemStorage(serviceNames), nil
 	case "s3":
 		return CreateS3Storage(serviceNames)
+	case "firestore":
+		return CreateFirestoreStorage()
 	}
 
 	return nil, fmt.Errorf("unknown storage type %q", storageType)

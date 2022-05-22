@@ -16,6 +16,15 @@
     * `AWS_REGION` - (e.g. `eu-west-1`)
     * `AWS_S3_ENDPOINT` (e.g. `http://localhost:9000`)
 
+### Google Firestore
+* stores data in the [Google Firestore][firestore]
+* Firestore needs to be configured using environment variables:
+    * `GOOGLE_PROJECT_ID`
+    * `GOOGLE_FIRESTORE_COLLECTION_PREFIX` (optional) - prefix for collection (e.g. `your-project-`)
+    * `FIRESTORE_EMULATOR_HOST` (testing) - you can use local firestore emulator
+
 ### filesystem
 
 - not implemented
+
+[firestore]: https://cloud.google.com/firestore
