@@ -214,50 +214,50 @@ func (server *httpServer) registerPrometheus() {
 
 func (server *httpServer) registerLogLevelHandler() {
 	apiToken := os.Getenv("LOG_LEVEL_API_KEY")
-
-	if apiToken != "" {
-		server.engine.POST("/log_level", func(c *gin.Context) {
-			bearerTokenHeader := c.GetHeader("Authorization")
-			parts := strings.Split(bearerTokenHeader, " ")
-			if len(parts) != 2 {
-				_ = c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("invalid Authorization header input"))
-				c.Abort()
-				return
-			}
-
-			if apiToken != parts[1] {
-				_ = c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("invalid Authorization bearer token"))
-				c.Abort()
-				return
-			}
-
-			var data struct {
-				Level string `json:"level"`
-			}
-
-			if err := c.BindJSON(&data); err != nil {
-				c.String(http.StatusBadRequest, "could not decode input json (level field is required)")
-				c.Abort()
-				return
-			}
-
-			level, err := logrus.ParseLevel(data.Level)
-			if err != nil {
-				c.String(http.StatusBadRequest, "%q is not supported log level", data.Level)
-				c.Abort()
-				return
-			}
-
-			server.logger.SetLevel(level)
-			c.String(http.StatusNoContent, "")
-			c.Abort()
-			server.logger.Infof("Log level changed to %q", level.String())
-		})
-
-		server.logger.Trace("Log level change endpoint created")
-	} else {
+	if apiToken == "" {
 		server.logger.Trace("Log level change endpoint not going to work because there is no LOG_LEVEL_API_KEY environment variable")
+		return
 	}
+
+	server.engine.POST("/log_level", func(c *gin.Context) {
+		bearerTokenHeader := c.GetHeader("Authorization")
+		parts := strings.Split(bearerTokenHeader, " ")
+		if len(parts) != 2 {
+			_ = c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("invalid Authorization header input"))
+			c.Abort()
+			return
+		}
+
+		if apiToken != parts[1] {
+			_ = c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("invalid Authorization bearer token"))
+			c.Abort()
+			return
+		}
+
+		var data struct {
+			Level string `json:"level"`
+		}
+
+		if err := c.BindJSON(&data); err != nil {
+			c.String(http.StatusBadRequest, "could not decode input json (level field is required)")
+			c.Abort()
+			return
+		}
+
+		level, err := logrus.ParseLevel(data.Level)
+		if err != nil {
+			c.String(http.StatusBadRequest, "%q is not supported log level", data.Level)
+			c.Abort()
+			return
+		}
+
+		server.logger.SetLevel(level)
+		c.String(http.StatusNoContent, "")
+		c.Abort()
+		server.logger.Infof("Log level changed to %q", level.String())
+	})
+
+	server.logger.Trace("Log level change endpoint created")
 }
 
 func (server *httpServer) registerIndexHandler() {
