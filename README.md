@@ -77,6 +77,6 @@ DELETE http://localhost:8080/people/[ENTITY-ID]
 Authorization: Bearer xyz
 ```
 
-## Current limitation
+## Current limitations
 
-USA does not support paginating. It's not recommended using USA for project with more than 1000 entities. 
+USA does not support pagination. It's not recommended using USA for project with more than 1000 entities. 
