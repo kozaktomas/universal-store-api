@@ -1,4 +1,4 @@
-FROM golang:1.18 AS builder
+FROM golang:1.21 AS builder
 ENV CGO_ENABLED 0
 ADD . /app
 WORKDIR /app
